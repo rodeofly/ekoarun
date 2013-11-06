@@ -1,0 +1,41 @@
+<!doctype html>
+ 
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Équations</title>
+
+  <script src="scripts/coffee-script.js"></script>
+  <script src="scripts/jquery.min.js"></script>
+  <script src="scripts/jquery-ui.min.js"></script>
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/fraction.css" />
+  <link rel="stylesheet" href="css/ekoarun.css" />
+  
+  </style>  
+</head>
+
+
+<body>
+  
+  <script type="text/coffeescript" src="scripts/ekoarun.coffee"></script>
+  
+    <h1>Ekoarun</h1>
+   
+  <div class="buttons">
+  	<button id="selectButton_0" class="selectButton" title="Sélectionner tous les termes de toutes les équations">&#9745;</button>
+	<button id="unselectButton_0" class="unselectButton" title="Déselectionner tous les termes de toutes les équations">&#9744;</button>
+  	<button id="helper_strictement_inferieur"><</button>
+  	<button id="helper_inferieur_ou_egal">≤</button>
+  	<button id="helper_egal">=</button>
+  	<button id="helper_superieur_ou_egal">≥</button>
+  	<button id="helper_strictement_superieur">></button>
+  </div>
+
+  <input id="equation_string" type="text" size="50" value="(-6/8)foo + (2/3)bar + (-2/3)foo + (5/8) = (-6/8)bar + (2/3)">
+  <button id="add_equation" title="L'(in)équation doit être de la forme : (±rationnel) + (±rationnel)symbol <≤=≥> (±rationnel) + (±rationnel)symbol">Inserer</button>
+  
+</body>
+</html>

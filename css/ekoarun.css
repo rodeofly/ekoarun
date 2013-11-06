@@ -1,0 +1,56 @@
+.monome
+{
+    cursor: crosshair;
+}
+
+.membreDeDroite, .membreDeGauche {
+  margin:0px;
+  padding: 0px;
+  min-height : 2em;
+  display: inline-block;
+
+  
+}
+
+.membreDeGauche {
+	text-align : right;
+}
+
+.membreDeDroite {
+	text-align : left;
+}
+
+.equation {
+  background:moccasin;
+  vertical-align : middle;
+  color : black;
+  text-align : center;
+  
+}
+
+.signe {
+  margin: 0px 50px 0px 50px;
+  padding: 0px;
+  display : inline-block;
+  vertical-align : middle;
+  font-size : 2em;
+  font-weight : bold;
+}
+
+.monome {
+  display : inline-block;
+  margin: 0px;
+  padding: 0px;
+  list-style-type : none;
+  font-size: 2em; 
+  font-weight : bold; 
+}
+
+.plus, .moins {
+  margin : 0px 10px 0px 10px;
+  padding: 0px;
+  vertical-align: middle; 
+
+}
+
+

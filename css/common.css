@@ -1,0 +1,18 @@
+body { 
+  margin:0;
+  padding:0;
+}
+
+.selected {
+  background : BurlyWood !important;
+  height : 100%;
+}
+
+.placeholder {
+  visibility: visible !important;  
+  background: BurlyWood;
+  width : 20px;
+  height : 0.7em;
+  -moz-border-radius: 15px;
+  border-radius: 15px;
+}
