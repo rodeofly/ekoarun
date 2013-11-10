@@ -1,8 +1,6 @@
 # Class Fraction
 class Fraction
-  constructor: (@numerateur, @denominateur) ->
-    if @denominateur < 0 then [@numerateur , @denominateur] = [-@numerateur;-@denominateur]
-    
+  constructor: (@numerateur, @denominateur) ->    
   
   irreductible: () ->
     [a, b] = [@numerateur, @denominateur]
@@ -14,7 +12,6 @@ class Fraction
   
   inverse: () ->
     [@numerateur,@denominateur]=[@denominateur,@numerateur]
-    if @denominateur < 0 then [@numerateur , @denominateur] = [-@numerateur;-@denominateur]
   
   oppose: () ->
     @numerateur = -@numerateur
