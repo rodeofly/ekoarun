@@ -10,6 +10,7 @@ ul > li.monome:first-child > span.plus {
   margin:0px;
   padding: 0px;
   min-height : 2em;
+  min-width : 100px;
   display: inline-block;
 
   
