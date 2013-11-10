@@ -92,15 +92,24 @@ mettre_a_jour_les_monomes = ->
       when "symbol"
         symbol = $( this ).attr("data-symbol")
         if fraction.numerateur*fraction.denominateur in [-1,1]
-          if fraction.numerateur is 1
+          if fraction.numerateur/fraction.denominateur is 1
             $( this ).html( "<span class='plus'>+</span>" + "<span>" + symbol + "</span>" )
           else
             $( this ).html( "<span class='moins'>&#8210;</span>" + "<span>" + symbol + "</span>" )
-
         else
           $( this ).html( html + "<span>" + symbol + "</span>" )                      
       when "rationnel"
         $( this ).html( html )
+  $(".equation").each ->
+    id = $( this ).attr("id").split("_")[1]
+    $li_gauche = $( "#equation_#{id} > ul.membreDeGauche > li")
+    if $li_gauche.length is 1 and $li_gauche.attr("data-symbol")
+      if $li_gauche.attr("data-value") is "1/1" or $li_gauche.attr("data-value") is "1"
+        $( "#copier_#{id}" ).show()
+      else
+        $( "#copier_#{id}" ).hide()
+    else
+      $( "#copier_#{id}" ).hide()
   
 # effectuer la somme, par membre, des termes selectionnés
 sommation_par_membre = (side,id) ->    
@@ -187,6 +196,13 @@ doSort = () ->
   
 # On Dom Ready !
 $ ->
+  mettre_a_jour_les_monomes()
+  
+  id = 25
+  copier_symbole= ""
+  copier_contenu= {}
+  changementSens = { '=': '=', '<': '>', '>': '<', '≤': '≥', '≥': '≤' }
+ 
   # inserer un signe dans le champs de saisie des équations
   $( "#helper_strictement_inferieur" ).click () ->
     $( "#equation_string" ).val($( "#equation_string" ).val()+"<")
@@ -323,7 +339,42 @@ $ ->
     mdd = n_termes_string(n)
     equation = "#{mdg} #{randomSigne} #{mdd}"
     $( "#equation_string" ).val(equation)
+  
+  $( "body" ).on "click", ".copier", () ->
+    id = parseInt $( this ).attr("id").split("_")[1]
+    copier_symbole = $( "#equation_#{id} > ul.membreDeGauche > li").attr("data-symbol")
+    copier_contenu = $( "#equation_#{id} > ul.membreDeDroite > li")
+    alert "symbole copié : #{copier_symbole}"
     
+   check_substitute = (side,id) ->
+     Side = if side is "gauche" then "Gauche" else "Droite"
+     #alert "#membreDe#{Side}_#{id} > li"
+     #alert $( "#membreDe#{Side}_#{id} > li").length
+     $( "#membreDe#{Side}_#{id} > li").each ->
+       #alert copier_symbole + " vs " + $( this ).attr( "data-symbol")
+       if $( this ).attr( "data-symbol") is copier_symbole
+         html = ""
+         fraction1 = value_comme_fraction $( this ).attr( "data-value") 
+         copier_contenu.each ->
+           fraction2 = value_comme_fraction $( this ).attr("data-value")
+           value = multiplier_deux_fractions fraction1, fraction2
+           symbol = $( this ).attr("data-symbol")
+           if symbol
+             html += "<li class='monome #{side}' data-value='#{value.numerateur}/#{value.denominateur}' data-type='symbol' data-symbol='#{symbol}'></li>"
+           else
+             html += "<li class='monome #{side}' data-value='#{value.numerateur}/#{value.denominateur}' data-type='rationnel'></li>"  
+         $( this ).hide 1000, () -> 
+           $( this ).remove()
+           $( "#membreDe#{Side}_#{id}" ).append(html)
+           mettre_a_jour_les_monomes()
+
+       
+   
+  $( "body" ).on "click", ".coller", () ->
+    id = parseInt $( this ).attr("id").split("_")[1]
+    check_substitute("gauche", id)
+    check_substitute("droite", id)
+          
   $( "body" ).on "click", "#add_equation", () ->
     id++
     # On récupère l'equation et on enlève tous les whitespaces \s+
@@ -351,6 +402,8 @@ $ ->
                   <button id='diviser_#{id}' class='diviser'  title='Diviser par un terme chaque membre de cette équation'>&#247;</button>
                   <input id='poids_#{id}'  class='poids' type='text' size='5'>
                   <button id='obtenirSolution_#{id}' class='obtenirSolution'  title='Obtenir la solution de cette équation'>?</button>
+                  <button id='copier_#{id}' class='copier'  title='Copier cette valeur'>&#169;</button>
+                  <button id='coller_#{id}' class='coller'  title='Injecter la valeur'>&#8618;</button>
                   <p id="solution_#{id}"></p>  
                 </div>
               """
@@ -364,12 +417,6 @@ $ ->
     else
       alert "Vérifier que l'équation est correctement formaté"
        
-   
-   mettre_a_jour_les_monomes()
-   doSort()
-   id = 25
-   changementSens = { '=': '=', '<': '>', '>': '<', '≤': '≥', '≥': '≤' }
-   
-      
+    doSort()
     
   
