@@ -1,34 +1,39 @@
 # Class Fraction
 class Fraction
   constructor: (@numerateur, @denominateur) ->
-    if @denominateur < 0
-      @numerateur *= -1
-      @denominateur *= -1
+    if @denominateur < 0 then [@numerateur , @denominateur] = [-@numerateur;-@denominateur]
+    
   
   irreductible: () ->
     [a, b] = [@numerateur, @denominateur]
     [a, b] = [b, a%b] until b is 0
     @denominateur /= a
     @numerateur /= a
+    if @denominateur < 0 then [@numerateur , @denominateur] = [-@numerateur;-@denominateur]
+
   
   inverse: () ->
     [@numerateur,@denominateur]=[@denominateur,@numerateur]
+    if @denominateur < 0 then [@numerateur , @denominateur] = [-@numerateur;-@denominateur]
   
   oppose: () ->
     @numerateur = -@numerateur
     
 ajouter_deux_fractions = (f1,f2) ->
-  n = f1.numerateur * f2.denominateur + f2.numerateur * f1.denominateur
-  d = f1.denominateur * f2.denominateur
+  if f1.denominateur isnt f2.denominateur
+    n = f1.numerateur * f2.denominateur + f2.numerateur * f1.denominateur
+    d = f1.denominateur * f2.denominateur
+  else
+    n = f1.numerateur + f2.numerateur
+    d = f1.denominateur
   foo = new Fraction n, d
+  
 
 multiplier_deux_fractions = (f1,f2) ->
   n = f1.numerateur * f2.numerateur
   d = f1.denominateur * f2.denominateur
   foo = new Fraction n, d
 
-# Enlever le plus en première position
-enlever_le_plus = -> $( "ul > li:first-child > span.plus").remove()
 # Evaluer value comme fraction
 value_comme_fraction = (value) ->
   foo = value.split("/")
@@ -41,18 +46,17 @@ value_comme_fraction = (value) ->
 fraction_as_html = (fraction) ->
   if fraction.denominateur is 1
     if fraction.numerateur < 0
-      html = "<span class='moins'>&#8210;</span><span class='integer'>" +Math.abs(fraction.numerateur)+ "</span>"
+      html = "<span class='moins'>&#8210;</span><span class='rationnel'>" +Math.abs(fraction.numerateur)+ "</span>"
     else
-      html = "<span class='plus'>+</span><span class='integer'>" +fraction.numerateur+ "</span>"
+      html = "<span class='plus'>+</span><span class='rationnel'>" +fraction.numerateur+ "</span>"
   else
     if fraction.numerateur < 0
       html = "<span class='moins'>&#8210;</span><span class='fraction'><span class='top'>" +Math.abs(fraction.numerateur)+ "</span><span class='bottom'>" + fraction.denominateur+ "</span></span>"
     else
       html = "<span class='plus'>+</span><span class='fraction'><span class='top'>" +fraction.numerateur+ "</span><span class='bottom'>" + fraction.denominateur+ "</span></span>"
   
-#Afficher les données contenus dans les monomes
+#Afficher la solution d'une équation
 obtenir_la_solution = (id) ->
-  
   if $( "#equation_#{id} > ul.membreDeGauche > li").length is 1 and $( "#equation_#{id} > ul.membreDeDroite > li").length is 1
     $li_gauche = $( "#equation_#{id} > ul.membreDeGauche > li")
     $li_droite = $( "#equation_#{id} > ul.membreDeDroite > li")
@@ -77,15 +81,17 @@ obtenir_la_solution = (id) ->
       else alert "On ne peut pas encore lire la solution ! il faut que le coefficient de l'inconnue soit 1."
     else alert "On ne peut pas encore lire la solution ! il faut une l'inconnue à gauche et une valeur à droite." 
   else alert "On ne peut pas encore lire la solution ! il faut un seul terme à gauche et un seul terme à droite." 
+
+# Afficher le contenu des termes de l'equation  
 mettre_a_jour_les_monomes = ->
   $(".monome").each ->
     typeOf = $( this ).attr("data-type")  
     fraction = value_comme_fraction $( this ).attr( "data-value")
-    html = fraction_as_html(fraction)  
+    html = fraction_as_html(fraction, typeOf)  
     switch typeOf
       when "symbol"
         symbol = $( this ).attr("data-symbol")
-        if $( this ).attr("data-value") in ["-1/1","1/1"]
+        if fraction.numerateur*fraction.denominateur in [-1,1]
           if fraction.numerateur is 1
             $( this ).html( "<span class='plus'>+</span>" + "<span>" + symbol + "</span>" )
           else
@@ -95,9 +101,8 @@ mettre_a_jour_les_monomes = ->
           $( this ).html( html + "<span>" + symbol + "</span>" )                      
       when "rationnel"
         $( this ).html( html )
-  enlever_le_plus()
   
-
+# effectuer la somme, par membre, des termes selectionnés
 sommation_par_membre = (side,id) ->    
     Side = if side is "gauche" then "Gauche" else "Droite"
     selected = "#membreDe" + Side + "_" + id + " > " + "li.monome." + side + ".selected"
@@ -125,20 +130,15 @@ sommation_par_membre = (side,id) ->
         $( membre ).append("<li class='monome #{side}' data-value='0' data-type='rationnel'></li>")
       mettre_a_jour_les_monomes()
 
-reduceOne = (id) ->
+#simplifier les fractions sélectionnées d'une équation
+simplifier_les_fractions = (id) ->
   $( "#equation_#{id} > ul > li.selected" ).each ->
     value = value_comme_fraction $( this ).attr( "data-value")
     value.irreductible()
     $( this ).attr( "data-value", "#{value.numerateur}/#{value.denominateur}")
   mettre_a_jour_les_monomes()
-  
-reduce = () ->
-  $( ".selected" ).each ->
-    value = value_comme_fraction $( this ).attr( "data-value")
-    value.irreductible()
-    $( this ).attr( "data-value", "#{value.numerateur}/#{value.denominateur}")
-  mettre_a_jour_les_monomes()
 
+#Modifier un terme lors de son passage d'un membre a l'autre de l'équation   
 changer_de_membre = (event, ui,id) ->
   value = value_comme_fraction(ui.item.attr("data-value"))
   value = multiplier_deux_fractions(value, new Fraction(-1, 1))
@@ -147,7 +147,8 @@ changer_de_membre = (event, ui,id) ->
     $( "#membreDeDroite_#{id}" ).append("<li class='monome droite' data-value='0' data-type='rationnel'></li>")
   if $( "#membreDeGauche_#{id}  > li" ).length is 0
     $( "#membreDeGauche_#{id}" ).append("<li class='monome gauche' data-value='0' data-type='rationnel'></li>")
-      
+
+#Obtenir le code html d'un membre d'une equation    
 membre_as_html = (membre,side,id) ->
   if side is "gauche"
     Side = "Gauche" 
@@ -162,6 +163,7 @@ membre_as_html = (membre,side,id) ->
       html += "<li class='monome #{side}' data-value='#{m[0][1..]}' data-type='rationnel'></li>"
   html += "</ul>"    
 
+# Rendre sortable et connectable les equations
 doSort = () ->    
   $( ".membreDeGauche" ).each ->
     id = $( this ).attr("id").split("_")[1]
@@ -185,7 +187,7 @@ doSort = () ->
   
 # On Dom Ready !
 $ ->
-    
+  # inserer un signe dans le champs de saisie des équations
   $( "#helper_strictement_inferieur" ).click () ->
     $( "#equation_string" ).val($( "#equation_string" ).val()+"<")
     
@@ -207,21 +209,22 @@ $ ->
     $( "#equation_#{id}" ).hide 'slow', () -> 
       $( "#equation_#{id}" ).remove()
       
-  # selectionner un monome
+  # selectionner un terme
   $('body').on "click", "li", () ->
     $(this).toggleClass("selected")
   
-  #Obtenir la solution de l'equation s'il ne reste plus qu'un symbol à gauche
-  $( "body" ).on "click", ".reduceOne", () ->
+  #Simplifier les fractions selectionnées d'une équation
+  $( "body" ).on "click", ".simplifier_les_fractions", () ->
     id = $( this ).attr("id").split("_")[1]
-    reduceOne(id)
+    simplifier_les_fractions(id)
     
-  #Obtenir la solution de l'equation s'il ne reste plus qu'un symbol à gauche
+  #Obtenir la solution de l'equation s'il ne reste plus qu'un symbole à gauche
+  #Simplifier les fractions selectionnées d'une équation
   $( "body" ).on "click", ".obtenirSolution", () ->
     id = $( this ).attr("id").split("_")[1]
     obtenir_la_solution(id)
     
-  # Ajouter un monome a chaque membre de lequation
+  # Ajouter un terme a chaque membre de lequation
   $( "body" ).on "click", ".ajouter", () ->
     id = $( this ).attr("id").split("_")[1]
     if $( "#poids_" + id ).val()
@@ -233,7 +236,7 @@ $ ->
       $( "#membreDeDroite_" + id ).append("<li class='monome droite' data-type='rationnel' data-value='#{value.numerateur}/#{value.denominateur}'><span></span></li>")
       mettre_a_jour_les_monomes()
   
-  # Retrancher un monome a chaque membre de lequation
+  # Retrancher un terme a chaque membre de lequation
   $( "body" ).on "click", ".retrancher", () ->
     id = $( this ).attr("id").split("_")[1]
     if $( "#poids_" + id ).val()
@@ -246,7 +249,7 @@ $ ->
       $( "#membreDeDroite_" + id ).append("<li class='monome droite' data-type='rationnel' data-value='#{value.numerateur}/#{value.denominateur}'><span></span></li>")
       mettre_a_jour_les_monomes()
       
-  # multiplier par une fraction a chaque membre de lequation
+  # multiplier par une fraction chaque membre de lequation
   $( "body" ).on "click", ".multiplier", () ->
     id = $( this ).attr("id").split("_")[1]
     if $( "#poids_" + id ).val()
@@ -277,6 +280,7 @@ $ ->
       $( this ).attr( "data-value","#{value.numerateur}/#{value.denominateur}")
     mettre_a_jour_les_monomes()    
   
+  # effectuer la somme, par membre, des termes selectionnés
   $( "body" ).on "click", ".sommationMonome", () ->
     id = parseInt $( this ).attr("id").split("_")[1]
     if $( "#equation_#{id} .selected" ).length>0
@@ -284,31 +288,48 @@ $ ->
         sommation_par_membre("droite",id)
     else alert("Selectionner des monomes en cliquant dessus !")
 
-   
-  
-  $( "#reduce" ).click () -> if $( ".selected" ).length>0 then reduce() else alert("Selectionner des monomes en cliquant dessus !")
-  
-  $( "body" ).on "click", ".selectButton", () ->
+  # selectionner tous les termes d'une equation
+  $( "body" ).on "click", ".selectAllButton", () ->
     id = parseInt $( this ).attr("id").split("_")[1]
-    switch id
-      when 0
-        $(".monome").addClass( "selected" )
-      else
-        $("#equation_" + id + " ul > .monome").addClass( "selected" )
-  $( ".unselectButton" ).click () ->
+    $("#equation_" + id + " ul > .monome").addClass( "selected" )
+  
+  # Déselectionner tous les termes d'une equation      
+  $( "body" ).on "click", ".unselectAllButton", () ->
     id = parseInt $( this ).attr("id").split("_")[1]
     switch id
       when 0
         $(".monome.selected").toggleClass( "selected" )
       else
         $("#equation_" + id + " ul > .monome.selected").toggleClass( "selected" )
-     
-  $( "#add_equation" ).on "click", ->
+  
+  n_termes_string = (n) ->
+    str = ""
+    for [1..n]
+      plusOrMinus = if Math.random() < 0.5 then -1 else 1
+      coeff = plusOrMinus*(Math.floor(10*Math.random())+1)
+      toss = Math.floor 2*Math.random()
+      if toss is 0 
+        str += "+(#{coeff}) "
+      else
+        str += "+(#{coeff})x "
+    str[1..]
+    
+  $( "body" ).on "click", "#generer_equation", () ->
+    signes =  ['≤', '≤', '≥', '>', '<', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=']
+    randomIndex = Math.floor Math.random() * signes.length
+    randomSigne = signes[randomIndex]
+    n = Math.floor(10*Math.random())+1
+    mdg = n_termes_string(n)
+    mdd = n_termes_string(n)
+    equation = "#{mdg} #{randomSigne} #{mdd}"
+    $( "#equation_string" ).val(equation)
+    
+  $( "body" ).on "click", "#add_equation", () ->
     id++
     # On récupère l'equation et on enlève tous les whitespaces \s+
     s = $( "#equation_string" ).val().replace(/\s+/g, '')
     # regex digest !
-    pattern_equation = /(\([\+\-]*\d+[/\d+]*\)\w*)(\+(\([\+\-]*\d+[/\d+]*\)\w*))*[<≤=≥>](\([\+\-]*\d+[/\d+]*\)\w*)(\+(\([\+\-]*\d+[/\d+]*\)\w*))*/g
+    pattern_equation = /(\([\+\-]*\d+[/\d+]*\)(\w²{0,1})*)(\+(\([\+\-]*\d+[/\d+]*\)(\w²{0,1})*))*[<≤=≥>](\([\+\-]*\d+[/\d+]*\)(\w²{0,1})*)(\+(\([\+\-]*\d+[/\d+]*\)(\w²{0,1})*))*/g
     foo = s.match(pattern_equation)
     if foo[0].length is s.length
       signe = s.match(/[<≤=≥>]/g)[0]
@@ -320,10 +341,10 @@ $ ->
               <div id='equation_#{id}' class='equation' >
                 <div id='panel_#{id}' class='buttons'>
                   <button id='deleteButton_#{id}' class='deleteButton' title='Supprimer cette équation'>X</button>
-                  <button id='selectButton_#{id}' class='selectButton' title='Sélectionner tous les termes de cette équation'>&#9745;</button>
-                  <button id='unselectButton_#{id}' class='unselectButton' title='Désélectionner tous les termes de cette équation'>&#9744;</button>
+                  <button id='selectAllButton_#{id}' class='selectAllButton' title='Sélectionner tous les termes de cette équation'>&#9745;</button>
+                  <button id='unselectAllButton_#{id}' class='unselectAllButton' title='Désélectionner tous les termes de cette équation'>&#9744;</button>
                   <button id='sommationMonome_#{id}' class='sommationMonome' title='Effectuer la somme des termes sélectionnés dans chaque membre'>&Sigma;</button>
-                  <button id='reduce_#{id}' class='reduceOne' title='rendre les fractions des termes sélectionnés irréductibles'>&frac12;</button>
+                  <button id='simplifier_#{id}' class='simplifier_les_fractions' title='rendre les fractions des termes sélectionnés irréductibles'>&frac12;</button>
                   <button id='ajouter_#{id}' class='ajouter' title='Ajouter un terme à chaque membre de cette équation'>+</button>
                   <button id='retrancher_#{id}' class='retrancher' title='Retrancher un terme à chaque membre de cette équation'>-</button>       
                   <button id='multiplier_#{id}' class='multiplier' title='Multiplier par un terme chaque membre de cette équation'>&#215;</button>        

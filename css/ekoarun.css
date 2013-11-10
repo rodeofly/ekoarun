@@ -1,3 +1,6 @@
+ul > li.monome:first-child > span.plus {
+	display:none;
+}
 .monome
 {
     cursor: crosshair;
