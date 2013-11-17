@@ -1,3 +1,41 @@
+body { 
+  margin:0;
+  padding:0;
+  text-align:center;
+
+}
+
+h1
+{
+  padding:10px;
+  margin:20px;
+  font-size: 32px;
+  text-shadow: -1px -1px #fb6, 1px 1px #d60, -3px 0 4px #000;
+  color: white;
+  background-color : moccasin;
+  font-weight:lighter;
+  -moz-box-shadow: 2px 2px 6px #888;  
+  -webkit-box-shadow: 2px 2px 6px #888;  
+  box-shadow:2px 2px 6px #888;  
+  text-align:center;
+  display:inline;
+}
+
+.selected {
+  background : BurlyWood !important;
+  height : 100%;
+}
+
+.placeholder {
+  visibility: visible !important;  
+  background: BurlyWood;
+  width : 20px;
+  height : 0.7em;
+  -moz-border-radius: 15px;
+  border-radius: 15px;
+}
+
+
 ul > li.monome:first-child > span.plus {
 	display:none;
 }
@@ -13,11 +51,12 @@ ul > li.monome:first-child > span.plus {
   min-width : 100px;
   display: inline-block;
 
-  
+  width: 45%
 }
 
 .membreDeGauche {
 	text-align : right;
+	
 }
 
 .membreDeDroite {
@@ -58,3 +97,26 @@ ul > li.monome:first-child > span.plus {
 }
 
 
+.panel_touch {
+	display: inline-block;
+	outline: none;
+	cursor: pointer;
+	text-align: center;
+	text-decoration: none;
+	font: 14px/100% Arial, Helvetica, sans-serif;
+	padding: .5em 2em .55em;
+	text-shadow: 0 1px 1px rgba(0,0,0,.3);
+	-webkit-border-radius: .5em; 
+	-moz-border-radius: .5em;
+	border-radius: .5em;
+	-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+	-moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+	box-shadow: 0 1px 2px rgba(0,0,0,.2);
+}
+.panel_touch:hover {
+	text-decoration: none;
+}
+.panel_touch:active {
+	position: relative;
+	top: 1px;
+}

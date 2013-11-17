@@ -1,0 +1,35 @@
+<!doctype html>
+ 
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Équations</title>
+
+  <script src="scripts/coffee-script.js"></script>
+  <script src="scripts/jquery.min.js"></script>
+  <script src="scripts/jquery-ui.min.js"></script>
+
+  <link rel="stylesheet" href="css/common.css" />
+  <link rel="stylesheet" href="css/fraction.css" />
+  <link rel="stylesheet" href="css/ekoarun.css" />
+  <script src="scripts/shunting-yard-algorithm.js"></script>
+  </style>  
+</head>
+
+
+<body>
+    <script type="text/coffeescript">
+$ ->
+  $( "body" ).on "click", ".go", () ->
+    alert shuntingYard $( "#new_string" ).val()
+    </script>
+ 
+   
+  
+
+  <input id="new_string" type="text" size="100">
+  <button id="go" class="go">go</button>
+  
+</body>
+</html>
