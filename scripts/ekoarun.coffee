@@ -7,7 +7,7 @@ liste_des_operateurs = ['+','-']
 liste_des_chiffres =   ['1','2','3','4','5','6','7','8','9','0']  
 liste_des_variables =  ['x','y','z','t']
 liste_des_signes =     ['=','<','>','≤','≥']
-focus = "equation_string"
+
 
 # Class Fraction
 class Fraction
@@ -146,7 +146,8 @@ mettre_a_jour_les_monomes = ->
 sommation_par_membre = (side,id) ->    
     Side = if side is "gauche" then "Gauche" else "Droite"
     membre = "#membreDe#{Side}_#{id}"
-    selected = "#{membre} > li.monome.#{side}.selected"
+    selected = "#{membre} > .#{side}.selected"
+    alert "#{Side} + #{membre} + #{selected} +#{$( selected ).length}" if debug
     symbols = {}
     values = new Fraction 0, 1
     $( selected ).each ->
@@ -165,9 +166,10 @@ sommation_par_membre = (side,id) ->
         $( membre ).append("<li class='monome #{side}' data-value='#{value.numerateur}/#{value.denominateur}' data-type='symbol' data-symbol='#{symbol}'></li>")  
     if values.numerateur isnt 0
       $( membre ).append("<li class='monome #{side}' data-value='#{values.numerateur}/#{values.denominateur}' data-type='rationnel'></li>")
-    if $( "#{membre} li" ).length is 0
-      $( membre ).append("<li class='monome #{side}' data-value='0' data-type='rationnel'></li>")
     $( selected ).remove()
+    if $( "#{membre} > li.#{side}" ).length is 0
+      $( membre ).append("<li class='monome #{side}' data-value='0' data-type='rationnel'></li>")
+    
     mettre_a_jour_les_monomes()
 
 #simplifier les fractions sélectionnées d'une équation
@@ -219,14 +221,14 @@ n_termes_string = (n) ->
       str += "+(#{coeff})x "
   str[1..]
 
-monome_comme_array = (string) ->
-  alert "monome_comme_array(#{string}) starts !" if debug
+monome_comme_array = (s) ->
+  alert "monome_comme_array(#{s}) starts !" if debug
   pattern_terme = /\([\+\-]*\d+[/\d+]*\)(\w+²{0,1})*/g
-  foo = string.match(pattern_terme)
+  foo = s.match(pattern_terme)
   if foo
-    if foo[0] is string
-      alert "#{string} match regex:#{pattern_terme}" if debug
-      foo = string.split(")")
+    if foo[0] is s
+      alert "#{s} match regex:#{pattern_terme}" if debug
+      foo = s.split(")")
       if foo[1] 
         foo = [foo[0][1..], foo[1]]
       else
@@ -265,6 +267,7 @@ multiplier_chaque_membre_par = (facteur,id) ->
 # On Dom Ready !
 $ ->  
   $('*:not(:input)').disableSelection()
+  $( "#equation_panel").draggable()
   
   #Le petit panel tactile
   for char in liste_des_variables.concat liste_des_operateurs.concat ["/"].concat liste_des_signes
@@ -273,11 +276,6 @@ $ ->
   for char in liste_des_chiffres.concat ['&leftarrow;']
     $("#equation_panel").append("<span id='var_#{char}' class='panel_touch'>#{char}</span>")
   
-  $('body').on "click", ".poids", () ->
-    focus = $(this).attr( "id" )
-  
-  $('body').on "click", ".effacerPoids", () ->
-    $( "#poids_#{id}" ).attr( "value", "" )
   
   $('body').on "click", "#effacer_equation_string", () ->
     $( "#equation_string" ).val( '' ) 
@@ -285,7 +283,7 @@ $ ->
   #Saisie 'intelligente' de l'equation   
   $('body').on "click", ".panel_touch", () ->
     char = $( this ).attr( "id" ).split("_")[1]    
-    saisie = $( "##{focus}" ).val()
+    saisie = $( "#equation_string" ).val()
     caractere_precedent = if saisie.length then saisie[saisie.length-1] else ''      
     
     if char is '←'
@@ -345,14 +343,14 @@ $ ->
       else
         saisie += "#{char}"
         
-    $( "##{focus}" ).val(saisie)
+    $( "#equation_string" ).val(saisie)
   
   
   # effacer une equation
   $('body').on "click", ".deleteButton", () ->
-    id = $( this ).attr("id").split("_")[1]
-    $( "#equation_#{id}" ).hide 'slow', () -> 
-      $( "#equation_#{id}" ).remove()
+    id = $( this ).parent().attr("id").split("_")[1]
+    $( "#equation_#{id}.focus" ).hide 'slow', () -> 
+      $( "#equation_#{id}.focus" ).remove()
   
    # additionner les termes selectionnés d'un membre par double click
   $('body').on "dblclick", ".selected", (event) ->
@@ -369,15 +367,24 @@ $ ->
     event.stopImmediatePropagation()
     $(this).toggleClass("selected")
   
-  #désélectionner les termes d'une équation en cliquant à coté
+  #Focus sur une équation et/ou désélectionner les termes d'une équation en cliquant à coté
   $('body').on "click", ".equation", () ->
+    $( ".focus" ).toggleClass("focus")
+    $( this ).toggleClass("focus")
+    focus_id = parseInt $( this ).attr("id").split("_")[1]
     $( this ).find( ".monome" ).removeClass( "selected" )
   
+  #focus sur une équation par le signe
+  $('body').on "click", ".signe", () ->
+    $( ".focus" ).toggleClass("focus")
+    id = $( this ).attr("id").split("_")[1]
+    $("#equation_#{id}").toggleClass("focus")
+    
   # selectionner tous les termes d'une equation
   $( "body" ).on "click", ".selectAllButton", (event) ->
     event.stopImmediatePropagation()
-    id = parseInt $( this ).attr("id").split("_")[1]
-    $("#equation_#{id} ul > .monome").addClass( "selected" )
+    id = $( ".focus" ).attr("id").split("_")[1]
+    $("#equation_#{id}.focus ul > .monome").addClass( "selected" )
     
   # simplifier un terme
   $('body').on "dblclick", ".monome", () ->
@@ -386,33 +393,33 @@ $ ->
    
   #Simplifier les fractions selectionnées d'une équation
   $( "body" ).on "click", ".simplifier_les_monomes", () ->
-    id = $( this ).attr("id").split("_")[1]
+    id = $( ".focus" ).attr("id").split("_")[1]
     simplifier_les_monomes(id)
     
   #Obtenir la solution de l'equation s'il ne reste plus qu'un symbole à gauche
   $( "body" ).on "click", ".obtenirSolution", () ->
-    id = $( this ).attr("id").split("_")[1]
+    id = $( ".focus" ).attr("id").split("_")[1]
     obtenir_la_solution(id)
       
   # Ajouter un terme a chaque membre de l'equation
   $( "body" ).on "click", ".ajouter", () ->
-    id = $( this ).attr("id").split("_")[1]
-    if $( "#poids_#{id}" ).val().slice(-1) in liste_des_chiffres then $( "#poids_#{id}" ).val($( "#poids_#{id}" ).val().concat ')')
-    array = monome_comme_array $( "#poids_#{id}" ).val()
+    id = $( ".focus" ).attr("id").split("_")[1]
+    if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
+    array = monome_comme_array $( "#equation_string" ).val()
     ajouter_un_terme_a_chaque_membre(array,id,1)
    
   # Retrancher un terme a chaque membre de lequation
   $( "body" ).on "click", ".retrancher", () ->
-    id = $( this ).attr("id").split("_")[1]
-    if $( "#poids_#{id}" ).val().slice(-1) in liste_des_chiffres then $( "#poids_#{id}" ).val($( "#poids_#{id}" ).val().concat ')')
-    array = monome_comme_array $( "#poids_#{id}" ).val()
+    id = $( ".focus" ).attr("id").split("_")[1]
+    if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
+    array = monome_comme_array $( "#equation_string" ).val()
     ajouter_un_terme_a_chaque_membre(array,id,-1)
         
   # multiplier par une fraction chaque membre de lequation
   $( "body" ).on "click", ".multiplier", () ->
-    id = $( this ).attr("id").split("_")[1]
-    if $( "#poids_#{id}" ).val().slice(-1) in liste_des_chiffres then $( "#poids_#{id}" ).val($( "#poids_#{id}" ).val().concat ')')
-    array = monome_comme_array $( "#poids_#{id}" ).val()
+    id = $( ".focus" ).attr("id").split("_")[1]
+    if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
+    array = monome_comme_array $( "#equation_string" ).val()
     if array.length is 1
       facteur = valeur_comme_fraction array[0]
       multiplier_chaque_membre_par(facteur,id)
@@ -421,9 +428,9 @@ $ ->
  
   # diviser par une fraction chaque membre de lequation
   $( "body" ).on "click", ".diviser", () ->
-    id = $( this ).attr("id").split("_")[1]
-    if $( "#poids_#{id}" ).val().slice(-1) in liste_des_chiffres then $( "#poids_#{id}" ).val($( "#poids_#{id}" ).val().concat ')')
-    array = monome_comme_array $( "#poids_#{id}" ).val()
+    id = $( ".focus" ).attr("id").split("_")[1]
+    if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
+    array = monome_comme_array $( "#equation_string" ).val()
     if array.length is 1
       facteur = valeur_comme_fraction array[0]
       facteur.inverse()
@@ -433,11 +440,12 @@ $ ->
        
   # effectuer la somme, par membre, des termes selectionnés
   $( "body" ).on "click", ".sommationMonome", () ->
-    id = parseInt $( this ).attr("id").split("_")[1]
-    if $( "#equation_#{id} .selected" ).length>0
-        sommation_par_membre("gauche",id) 
-        sommation_par_membre("droite",id)
-    else alert("Selectionner des monomes en cliquant dessus !")
+    id = parseInt $( ".focus" ).attr("id").split("_")[1]
+    if $( "#equation_#{id} ul > .droite.selected" ).length>0
+      sommation_par_membre("droite",id)
+    if $( "#equation_#{id} ul > .gauche.selected" ).length>0
+      sommation_par_membre("gauche",id)
+    
    
   $( "body" ).on "click", "#generer_equation", () ->
     signes =  ['≤', '≤', '≥', '>', '<', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=']
@@ -450,7 +458,7 @@ $ ->
     $( "#equation_string" ).val(equation)
   
   $( "body" ).on "click", ".copier", () ->
-    id = parseInt $( this ).attr("id").split("_")[1]
+    id = parseInt $( ".focus" ).attr("id").split("_")[1]
     copier_symbole = $( "#equation_#{id} > ul.membreDeGauche > li").attr("data-symbol")
     copier_contenu = $( "#equation_#{id} > ul.membreDeDroite > li")
     alert "symbole copié : #{copier_symbole}"
@@ -478,17 +486,17 @@ $ ->
           mettre_a_jour_les_monomes()       
    
   $( "body" ).on "click", ".coller", () ->
-    id = parseInt $( this ).attr("id").split("_")[1]
+    id = parseInt $( ".focus" ).attr("id").split("_")[1]
     check_substitute("gauche", id)
     check_substitute("droite", id)
           
   $( "body" ).on "click", "#add_equation", () ->
     id++
-    if $( "#equation_string" ).val()
-      if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
+    if s = $( "#equation_string" ).val()
+      if s.slice(-1) in liste_des_chiffres
+        $( "#equation_string" ).val(s + ')')
       # On récupère l'equation et on enlève tous les whitespaces \s+
       s = $( "#equation_string" ).val().replace(/\s+/g, '')
-      
       # regex digest !
       pattern_equation = /(\([\+\-]*\d+[/\d+]*\)(\w{1,}²{0,1})*)(\+(\([\+\-]*\d+[/\d+]*\)(\w{1,}²{0,1})*))*[<≤=≥>](\([\+\-]*\d+[/\d+]*\)(\w{1,}²{0,1})*)(\+(\([\+\-]*\d+[/\d+]*\)(\w{1,}²{0,1})*))*/g
       foo = s.match(pattern_equation)
@@ -498,33 +506,17 @@ $ ->
         mdg = s[0].split("+")
         mdd = s[1].split("+")   
         html =  """
-                <br />
                 <div id='equation_#{id}' class='equation' >
-                  <div id='panel_#{id}' class='buttons'>
-                    <button id='deleteButton_#{id}' class='deleteButton' title='Supprimer cette équation'>X</button>
-                    <button id='selectAllButton_#{id}' class='selectAllButton' title='Sélectionner tous les termes de cette équation'>all</button>
-                    <button id='sommationMonome_#{id}' class='sommationMonome' title='Effectuer la somme des termes sélectionnés dans chaque membre'>&Sigma;</button>
-                    <button id='simplifier_#{id}' class='simplifier_les_monomes' title='rendre les fractions des termes sélectionnés irréductibles'>&frac12;</button>
-                    <button id='ajouter_#{id}' class='ajouter' title='Ajouter un terme à chaque membre de cette équation'>+</button>
-                    <button id='retrancher_#{id}' class='retrancher' title='Retrancher un terme à chaque membre de cette équation'>-</button>       
-                    <button id='multiplier_#{id}' class='multiplier' title='Multiplier par un terme chaque membre de cette équation'>&#215;</button>        
-                    <button id='diviser_#{id}' class='diviser'  title='Diviser par un terme chaque membre de cette équation'>&#247;</button>
-                    <input id='poids_#{id}'  class='poids' type='text' size='5'>
-                    <button id='effacerPoids_#{id}'  class='effacerPoids' title='effacer'>o</button>
-                    <button id='obtenirSolution_#{id}' class='obtenirSolution'  title='Obtenir la solution de cette équation'>?</button>
-                    <button id='copier_#{id}' class='copier'  title='Copier cette valeur'>&#169;</button>
-                    <button id='coller_#{id}' class='coller'  title='Injecter la valeur'>&#8618;</button>
-                    <p id="solution_#{id}"></p>  
-                  </div>
+                    <button id='deleteButton_{id}' class='deleteButton' title='Supprimer cette équation'>X</button>                  
                 """
         html += membre_as_html(mdg,"gauche",id)
         html += "<span id='signe_#{id}' class='signe'>#{signe}</span>"
         html += membre_as_html(mdd,"droite",id)
-        html += "</div>"
+        html += "<p id='solution_#{id}'></p></div>"
         $( "body" ).append(html)
         mettre_a_jour_les_monomes()
         doSort()
       else
         alert "Vérifier que l'équation est correctement formatée"
     doSort()
-    
+      

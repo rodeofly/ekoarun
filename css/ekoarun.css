@@ -20,6 +20,11 @@ h1
   text-align:center;
   display:inline;
 }
+.focus {
+  outline: none;
+  border-color: #9ecaed;
+  box-shadow: 0 0 10px #9ecaed;
+}
 
 .selected {
   background : BurlyWood !important;
@@ -96,15 +101,31 @@ ul > li.monome:first-child > span.plus {
 
 }
 
-
+button {
+	font: 20px/100% Arial, Helvetica, sans-serif;
+	font-weight : bold;
+	padding: 1em ;
+	-webkit-border-radius: .5em; 
+	-moz-border-radius: .5em;
+	border-radius: .5em;
+	
+}
+#equation_panel{
+	width:auto;
+	margin:0;
+	padding:0;
+    background-color:rgba(0,0,0,0.05);
+}
 .panel_touch {
 	display: inline-block;
+	background-color:ligth-grey;
 	outline: none;
 	cursor: pointer;
 	text-align: center;
 	text-decoration: none;
-	font: 14px/100% Arial, Helvetica, sans-serif;
-	padding: .5em 2em .55em;
+	font: 20px/100% Arial, Helvetica, sans-serif;
+	font-weight : bold;
+	padding: 1em ;
 	text-shadow: 0 1px 1px rgba(0,0,0,.3);
 	-webkit-border-radius: .5em; 
 	-moz-border-radius: .5em;
@@ -119,4 +140,14 @@ ul > li.monome:first-child > span.plus {
 .panel_touch:active {
 	position: relative;
 	top: 1px;
+}
+
+.deleteButton {
+	float:left;
+	font: 20px/100% Arial, Helvetica, sans-serif;
+	font-weight : bold;
+	padding: 0 ;
+	-webkit-border-radius: .5em; 
+	-moz-border-radius: .5em;
+	border-radius: .5em;
 }

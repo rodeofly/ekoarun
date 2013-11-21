@@ -22,15 +22,24 @@
   
   
   
-    <h1>Ekoarun</h1>
+  <h1>Ekoarun</h1>
   <br /><br /><br />
-  <div id="equation_panel"></div>
-  	
+  <div id="equation_panel">
+	<input id="equation_string" type="text" size="100" value=""  readonly><br />
+	<button id="effacer_equation_string" title="effacer">o</button>
+	<button id="generer_equation" title="générer une équation du premier degré">Générer</button>
+	<button id="add_equation" title="Ajouter au système d'équation">Inserer</button>
+	<button class="selectAllButton" title="Sélectionner tous les termes de cette équation">all</button>
+	<button class="sommationMonome" title="Effectuer la somme des termes sélectionnés dans chaque membre">&Sigma;</button>
+	<button class="simplifier_les_monomes" title="rendre les fractions des termes sélectionnés irréductibles">&frac12;</button>
+	<button class="ajouter" title="Ajouter un terme à chaque membre de cette équation">+</button>
+	<button class="retrancher" title="Retrancher un terme à chaque membre de cette équation">-</button>       
+	<button class="multiplier" title="Multiplier par un terme chaque membre de cette équation">&#215;</button>        
+	<button class="diviser"  title="Diviser par un terme chaque membre de cette équation">&#247;</button>
+	<button class="obtenirSolution"  title="Obtenir la solution de cette équation">?</button>
+	<button class="copier"  title="Copier cette valeur">&#169;</button>
+	<button class="coller"  title="Injecter la valeur">&#8618;</button><br />
   </div>
-  <input id="equation_string" type="text" size="100" value="">
-  <button id="add_equation" title="L'(in)équation doit être de la forme : (±rationnel) + (±rationnel)symbol <≤=≥> (±rationnel) + (±rationnel)symbol">Inserer</button>
-  <button id="effacer_equation_string" title="effacer">o</button>
-  <button id="generer_equation" title="générer une équation du premier degré">?</button>
   
 </body>
 </html>

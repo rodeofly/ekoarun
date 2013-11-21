@@ -9,30 +9,25 @@ ekoarun
 // Florian Tobé
 //
 
-mettre_a_jour_les_monomes = ->
-  $(".monome").each ->
-    typeOf = $( this ).attr("data-type")  
-    fraction = value_comme_fraction $( this ).attr( "data-value")
-    html = fraction_as_html(fraction, typeOf)  
-    switch typeOf
-      when "symbol"
-        symbol = $( this ).attr("data-symbol")
-        if fraction.numerateur*fraction.denominateur in [-1,1]
-          if fraction.numerateur/fraction.denominateur is 1
-            $( this ).html( "<span class='plus'>+</span>" + "<span>" + symbol + "</span>" )
-          else
-            $( this ).html( "<span class='moins'>&#8210;</span>" + "<span>" + symbol + "</span>" )
-        else
-          $( this ).html( html + "<span>" + symbol + "</span>" )                      
-      when "rationnel"
-        $( this ).html( html )
-  $(".equation").each ->
-    id = $( this ).attr("id").split("_")[1]
-    $li_gauche = $( "#equation_#{id} > ul.membreDeGauche > li")
-    if $li_gauche.length is 1 and $li_gauche.attr("data-symbol")
-      if $li_gauche.attr("data-value") is "1/1" or $li_gauche.attr("data-value") is "1"
-        $( "#copier_#{id}" ).show()
-      else
-        $( "#copier_#{id}" ).hide()
-    else
-      $( "#copier_#{id}" ).hide()
+  <h1>Ekoarun</h1>
+  <br /><br /><br />
+  <div id="equation_panel"> </div>
+  	
+  <input id="equation_string" type="text" size="100" readonly>
+  <span id="effacer_equation_string" class="panel_touch">Effacer</span>
+  <span id="generer_equation" class="panel_touch">Générer</span>
+  <span id="add_equation" class="panel_touch">Inserer</span>
+  <div class="buttons">
+    <button class="deleteButton" title="Supprimer cette équation">X</button>
+    <button class="selectAllButton" title="Sélectionner tous les termes de cette équation">all</button>
+    <button class="sommationMonome" title="Effectuer la somme des termes sélectionnés dans chaque membre">&Sigma;</button>
+    <button class="simplifier_les_monomes" title="rendre les fractions des termes sélectionnés irréductibles">&frac12;</button>
+    <button class="ajouter" title="Ajouter un terme à chaque membre de cette équation">+</button>
+    <button class="retrancher" title="Retrancher un terme à chaque membre de cette équation">-</button>       
+    <button class="multiplier" title="Multiplier par un terme chaque membre de cette équation">&#215;</button>        
+    <button class="diviser"  title="Diviser par un terme chaque membre de cette équation">&#247;</button>
+    <button class="obtenirSolution"  title="Obtenir la solution de cette équation">?</button>
+    <button class="copier"  title="Copier cette valeur">&#169;</button>
+    <button class="coller"  title="Injecter la valeur">&#8618;</button>
+  </div>
+  
