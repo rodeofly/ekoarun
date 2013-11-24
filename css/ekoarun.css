@@ -1,8 +1,7 @@
 body { 
   margin:0;
-  padding:0;
   text-align:center;
-
+  cursor: default;
 }
 
 h1
@@ -20,110 +19,21 @@ h1
   text-align:center;
   display:inline;
 }
-.focus {
-  outline: none;
-  border-color: #9ecaed;
-  box-shadow: 0 0 10px #9ecaed;
-}
 
-.selected {
-  background : BurlyWood !important;
-  height : 100%;
-}
-
-.placeholder {
-  visibility: visible !important;  
-  background: BurlyWood;
-  width : 20px;
-  height : 0.7em;
-  -moz-border-radius: 15px;
-  border-radius: 15px;
-}
-
-
-ul > li.monome:first-child > span.plus {
-	display:none;
-}
-.monome
-{
-    cursor: crosshair;
-}
-
-.membreDeDroite, .membreDeGauche {
-  margin:0px;
-  padding: 0px;
-  min-height : 2em;
-  min-width : 100px;
-  display: inline-block;
-
-  width: 45%
-}
-
-.membreDeGauche {
-	text-align : right;
-	
-}
-
-.membreDeDroite {
-	text-align : left;
-}
-
-.equation {
-  background:moccasin;
-  vertical-align : middle;
-  color : black;
-  text-align : center;
-  
-}
-
-.signe {
-  margin: 0px 50px 0px 50px;
-  padding: 0px;
-  display : inline-block;
-  vertical-align : middle;
-  font-size : 2em;
-  font-weight : bold;
-}
-
-.monome {
-  display : inline-block;
-  margin: 0px;
-  padding: 0px;
-  list-style-type : none;
-  font-size: 2em; 
-  font-weight : bold; 
-}
-
-.plus, .moins {
-  margin : 0px 10px 0px 10px;
-  padding: 0px;
-  vertical-align: middle; 
-
-}
-
-button {
-	font: 20px/100% Arial, Helvetica, sans-serif;
-	font-weight : bold;
-	padding: 1em ;
-	-webkit-border-radius: .5em; 
-	-moz-border-radius: .5em;
-	border-radius: .5em;
-	
-}
 #equation_panel{
-	width:auto;
+	width : 480px;
 	margin:0;
 	padding:0;
     background-color:rgba(0,0,0,0.05);
 }
 .panel_touch {
 	display: inline-block;
-	background-color:ligth-grey;
+	background-color:white;
 	outline: none;
 	cursor: pointer;
 	text-align: center;
 	text-decoration: none;
-	font: 20px/100% Arial, Helvetica, sans-serif;
+	font: 1em/100% Arial, Helvetica, sans-serif;
 	font-weight : bold;
 	padding: 1em ;
 	text-shadow: 0 1px 1px rgba(0,0,0,.3);
@@ -141,6 +51,15 @@ button {
 	position: relative;
 	top: 1px;
 }
+button {
+	font: 1em/100% Arial, Helvetica, sans-serif;
+	font-weight : bold;
+	padding: 0,75em ;
+	-webkit-border-radius: .5em; 
+	-moz-border-radius: .5em;
+	border-radius: .5em;
+	
+}
 
 .deleteButton {
 	float:left;
@@ -150,4 +69,92 @@ button {
 	-webkit-border-radius: .5em; 
 	-moz-border-radius: .5em;
 	border-radius: .5em;
+}
+
+
+.equation {
+  background:moccasin;
+  vertical-align : middle;
+  color : black;
+  text-align : center;
+}
+.focus {
+  outline: none;
+  border-color: #9ecaed;
+  box-shadow: 0 0 10px #9ecaed;
+}
+
+
+.membreDeDroite, .membreDeGauche {
+  margin:0px;
+  padding: 0px;
+  min-height : 2em;
+  min-width : 100px;
+  display: inline-block;
+}
+.membreDeGauche {
+  text-align : right;	
+}
+.membreDeDroite {
+  text-align : left;
+}
+
+.signe {
+  margin: 0px 50px 0px 50px;
+  padding: 0px;
+  display : inline-block;
+  vertical-align : middle;
+  font-size : 2em;
+  font-weight : bold;
+}
+.plus, .moins {
+  margin : 0px 10px 0px 10px;
+  padding: 0px;
+  vertical-align: middle; 
+}
+
+li.monome {
+  display : inline-block;
+  margin: 0px;
+  padding: 0px;
+  list-style-type : none;
+  font-size: 2em; 
+  font-weight : bold;
+  cursor: pointer;
+}
+ul > li.monome:first-child > span > span.plus {
+	display:none;
+}
+
+li {
+	-moz-user-select: -moz-all;
+    -webkit-user-select: all;
+    -ms-user-select: all;
+    user-select: all;
+}
+li.selected {
+  background : BurlyWood !important;
+  height : 100%;
+  -webkit-border-radius: .5em; 
+  -moz-border-radius: .5em;
+  border-radius: .5em;
+}
+
+li.ui-sortable-helper{
+  cursor: crosshair;  
+}
+
+li.ui-sortable-placeholder {
+  visibility: visible !important;  
+  background: BurlyWood;
+  width : 25px;
+  height : 0.7em;
+  -moz-border-radius: 15px;
+  border-radius: 15px;
+}
+
+.choixMonome {
+	margin:0;
+	padding:0;
+    background-color:rgba(0,0,0,0.05);
 }

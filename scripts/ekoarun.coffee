@@ -1,17 +1,16 @@
 debug = false
-id = 1
-copier_symbole= ""
-copier_contenu= {}
+unique_id = 1
+activer_copier_symbole= ""
+activer_copier_contenu= {}
 changementSens = { '=': '=', '<': '>', '>': '<', '≤': '≥', '≥': '≤' }
 liste_des_operateurs = ['+','-']
 liste_des_chiffres =   ['1','2','3','4','5','6','7','8','9','0']  
 liste_des_variables =  ['x','y','z','t']
 liste_des_signes =     ['=','<','>','≤','≥']
 
-
 # Class Fraction
 class Fraction
-  constructor: (@numerateur, @denominateur) ->    
+  constructor: (@numerateur, @denominateur) ->
   
   irreductible: () ->
     [a, b] = [@numerateur, @denominateur]
@@ -19,12 +18,16 @@ class Fraction
     @denominateur /= a
     @numerateur /= a
     if @denominateur < 0 then [@numerateur , @denominateur] = [-@numerateur;-@denominateur]
+    foo = new Fraction @numerateur,@denominateur
 
   inverse: () ->
-    [@numerateur,@denominateur]=[@denominateur,@numerateur]
+    if @numerateur isnt 0
+      [@numerateur,@denominateur]=[@denominateur,@numerateur]
+      foo = new Fraction @numerateur,@denominateur
   
   oppose: () ->
     @numerateur = -@numerateur
+    foo = new Fraction @numerateur,@denominateur
      
 ajouter_deux_fractions = (f1,f2) ->
   if f1.denominateur isnt f2.denominateur
@@ -41,49 +44,114 @@ multiplier_deux_fractions = (f1,f2) ->
   foo = new Fraction n, d
 
 # Evaluer value comme fraction
-valeur_comme_fraction = (value) ->
-  alert "valeur_comme_fraction(#{value}) starts !" if debug
+string_to_frac = (value) ->
+  alert "string_to_frac(#{value}) starts !" if debug
   foo = value.split("/")
-  if foo.length>1
-    fraction = new Fraction parseInt(foo[0]), parseInt(foo[1])
-  else
-    fraction = new Fraction parseInt(foo[0]), 1
-
+  switch foo.length
+    when 2
+      [n,d] = [parseInt(foo[0]), parseInt(foo[1])]
+      if n? and d? then foo = new Fraction n,d else alert "Erreur : string_to_frac, n is #{n} and d is #{d} !"
+    when 1
+      n = parseInt(foo[0])
+      if n? then foo = new Fraction n,1 else alert "Erreur : string_to_frac, n is #{n} !"
+    else
+      alert "Erreur : string_to_frac, value is #{value} !"
+    
 # afficher une fraction en html
-fraction_as_html = (fraction) ->
+frac_to_html = (fraction) ->
   if fraction.denominateur is 1
     if fraction.numerateur < 0
       html = "<span class='moins'>&minus;</span><span class='rationnel'>#{Math.abs(fraction.numerateur)}</span>"
     else
-      html = "<span class='plus'>+</span><span class='rationnel'>#{fraction.numerateur}</span>"
+      html = "<span class='plus'>&plus;</span><span class='rationnel'>#{fraction.numerateur}</span>"
   else
     if fraction.numerateur < 0
       html = "<span class='moins'>&minus;</span><span class='fraction'><span class='top'>#{Math.abs(fraction.numerateur)}</span><span class='bottom'>#{fraction.denominateur}</span></span>"
     else
-      html = "<span class='plus'>+</span><span class='fraction'><span class='top'>#{fraction.numerateur}</span><span class='bottom'>#{fraction.denominateur}</span></span>"
+      html = "<span class='plus'>&plus;</span><span class='fraction'><span class='top'>#{fraction.numerateur}</span><span class='bottom'>#{fraction.denominateur}</span></span>"
 
+mettre_a_jour_ce_monome = (monome)->
+  try
+    id = monome.parent().attr("id").split("_")[1]
+    data_type = monome.attr("data-type")
+    fraction = string_to_frac monome.attr( "data-value")
+    html = "<span id='monome_html_#{id}' class='monome_html'>"
+    html += frac_to_html fraction
+    switch data_type
+      when "symbol"
+        symbol = monome.attr("data-symbol")
+        if fraction.numerateur*fraction.denominateur in [-1,1]
+          if fraction.numerateur/fraction.denominateur is 1
+            monome.html( "<span class='droppable'><span class='plus'>+</span><span>#{symbol}</span></span>" )
+          else
+            monome.html( "<span class='droppable'><span class='moins'>&minus;</span><span>#{symbol}</span></span>" )
+        else
+          monome.html( "#{html}<span>#{symbol}</span></span>")                   
+      when "rationnel"
+        monome.html( "#{html}</span>" )
+    
+    $li_gauche = $( "#membreDeGauche_#{id} > li")
+    if $li_gauche.length is 1 and $li_gauche.attr("data-symbol")
+      if $li_gauche.attr("data-value") is "1/1" or $li_gauche.attr("data-value") is "1"
+        $( "#activer_copier_#{id}" ).show()
+      else
+        $( "#activer_copier_#{id}" ).hide()
+    else
+      $( "#activer_copier_#{id}" ).hide()
+  catch error
+    alert "mettre_a_jour_ce_monome : #{error}"
+  finally
+  
+# Afficher le contenu des termes de l'equation  
+mettre_a_jour_les_monomes = ->  
+  $(".equation").each ->
+    id = $( this ).attr("id").split("_")[1]
+    for Side in ["Gauche","Droite"]
+      side = if Side is "Gauche" then "gauche" else "Droite"
+  $(".monome").each ->
+    mettre_a_jour_ce_monome( $( this ) )      
+  doSort()
+  
+#Ajouter un monome à un autre monome s'ils sont de meme type
+ajouter_m1_a_m2 = (m1,m2) ->
+  if (m1.attr("data-type") is m2.attr("data-type")) and (m1.attr("data-type") is "rationnel" or m1.attr("data-symbol") is m2.attr("data-symbol"))
+    v = ajouter_deux_fractions string_to_frac(m1.attr( "data-value")), string_to_frac(m2.attr( "data-value"))
+    m1.hide
+      duration: "slow", 
+      easing: "easeInCirc", 
+      complete: -> 
+        m1.remove()
+        m2.attr("data-value", "#{v.numerateur}/#{v.denominateur}")
+        mettre_a_jour_ce_monome m2        
+  else
+    alert "On ne mélange pas symboles et les chiffres !"
+  
+doSortSide = (Side) ->
+  oppositeSide = if Side is "Gauche" then "Droite" else "Gauche"
+  side = if Side is "Gauche" then "gauche" else "Droite"
+  $("#equations_div").sortable  
+  $( ".membreDe#{Side}" ).each ->
+    id = $( this ).attr("id").split("_")[1]
+    $( "#membreDe#{Side}_#{id} > li" ).droppable
+      accept: "#membreDe#{Side}_#{id} > li"
+      hover: -> $(this).css('cursor','crosshair')
+      hoverClass: "ui-state-hover"
+      cursor: 'crosshair'
+      tolerance : "pointer"
+      drop: (event, ui) ->
+        ajouter_m1_a_m2(ui.draggable, $( this ) )
+        mettre_a_jour_ce_monome $( this )    
+    $( "#membreDe#{Side}_#{id}" ).sortable
+      connectWith: "#membreDe#{oppositeSide}_#{id}",
+      update : -> mettre_a_jour_les_monomes(id),
+      receive : (event, ui) ->
+        changer_de_membre(event, ui,id)
 # Rendre sortable et connectable les equations
-doSort = () ->    
-  $( ".membreDeGauche" ).each ->
-    id = $( this ).attr("id").split("_")[1]
-    $( "#membreDeGauche_#{id}" ).sortable
-      connectWith: "#membreDeDroite_#{id}",
-      placeholder: "monome placeholder",
-      update : (event, ui) ->
-        mettre_a_jour_les_monomes(id)
-      receive : (event, ui) ->
-        changer_de_membre(event, ui,id)
-     
-  $( ".membreDeDroite" ).each ->
-    id = $( this ).attr("id").split("_")[1]
-    $( "#membreDeDroite_#{id}" ).sortable
-      connectWith: "#membreDeGauche_#{id}",
-      placeholder: "monome placeholder",
-      update : (event, ui) ->
-        mettre_a_jour_les_monomes(id)
-      receive : (event, ui) ->
-        changer_de_membre(event, ui,id)
-          
+doSort = () -> 
+  doSortSide("Gauche") 
+  doSortSide("Droite")
+  $("#equations_div" ).sortable()
+        
 #Afficher la solution d'une équation
 obtenir_la_solution = (id) ->
   if $( "#equation_#{id} > ul.membreDeGauche > li").length is 1 and $( "#equation_#{id} > ul.membreDeDroite > li").length is 1
@@ -92,9 +160,9 @@ obtenir_la_solution = (id) ->
     if $li_gauche.attr("data-symbol") and not $li_droite.attr("data-symbol")
       if $li_gauche.attr("data-value") is "1/1" or $li_gauche.attr("data-value") is "1"
         signe = $( "#signe_#{id}" ).text()
-        value = valeur_comme_fraction($li_droite.attr( "data-value"))
-        value.irreductible()
-        s = fraction_as_html value 
+        frac = string_to_frac($li_droite.attr( "data-value"))
+        frac.irreductible()
+        s = frac_to_html frac 
         switch signe
           when "="
             solution = "S = {#{s}}"
@@ -111,88 +179,77 @@ obtenir_la_solution = (id) ->
     else alert "On ne peut pas encore lire la solution ! il faut une l'inconnue à gauche et une valeur à droite." 
   else alert "On ne peut pas encore lire la solution ! il faut un seul terme à gauche et un seul terme à droite." 
 
-mettre_a_jour_ce_monome = (monome)->
-  typeOf = monome.attr("data-type")  
-  fraction = valeur_comme_fraction monome.attr( "data-value")
-  html = fraction_as_html(fraction, typeOf)
-  id = monome.parent().attr("id").split("_")[1]
-  switch typeOf
-    when "symbol"
-      symbol = monome.attr("data-symbol")
-      if fraction.numerateur*fraction.denominateur in [-1,1]
-        if fraction.numerateur/fraction.denominateur is 1
-          monome.html( "<span class='plus'>+</span><span>#{symbol}</span>" )
-        else
-          monome.html( "<span class='moins'>&minus;</span><span>#{symbol}</span>" )
-      else
-        monome.html( "#{html}<span>#{symbol}</span>")                      
-    when "rationnel"
-      monome.html( html )
-  $li_gauche = $( "#membreDeGauche_#{id} > li")
-  if $li_gauche.length is 1 and $li_gauche.attr("data-symbol")
-    if $li_gauche.attr("data-value") is "1/1" or $li_gauche.attr("data-value") is "1"
-      $( "#copier_#{id}" ).show()
-    else
-      $( "#copier_#{id}" ).hide()
-  else
-    $( "#copier_#{id}" ).hide()
-    
-# Afficher le contenu des termes de l'equation  
-mettre_a_jour_les_monomes = ->
-  $(".monome").each ->
-    mettre_a_jour_ce_monome( $( this ) )
-  
+###############################################################################   unique_id++ 
 # effectuer la somme, par membre, des termes selectionnés
 sommation_par_membre = (side,id) ->    
-    Side = if side is "gauche" then "Gauche" else "Droite"
-    membre = "#membreDe#{Side}_#{id}"
-    selected = "#{membre} > .#{side}.selected"
-    alert "#{Side} + #{membre} + #{selected} +#{$( selected ).length}" if debug
-    symbols = {}
-    values = new Fraction 0, 1
-    $( selected ).each ->
-      typeOf = $( this ).attr("data-type")
-      value = valeur_comme_fraction $( this ).attr( "data-value")
-      symbol = $( this ).attr("data-symbol")   
-      switch typeOf
-        when "symbol"
-          symbols[ symbol ] ?= new Fraction 0, 1
-          symbols[ symbol ] = ajouter_deux_fractions(symbols[ symbol ], value)
-        when "rationnel"
-          values =  ajouter_deux_fractions(values, value)
-          
-    for symbol, value of symbols
-      if value.numerateur isnt 0
-        $( membre ).append("<li class='monome #{side}' data-value='#{value.numerateur}/#{value.denominateur}' data-type='symbol' data-symbol='#{symbol}'></li>")  
-    if values.numerateur isnt 0
-      $( membre ).append("<li class='monome #{side}' data-value='#{values.numerateur}/#{values.denominateur}' data-type='rationnel'></li>")
-    $( selected ).remove()
-    if $( "#{membre} > li.#{side}" ).length is 0
-      $( membre ).append("<li class='monome #{side}' data-value='0' data-type='rationnel'></li>")
-    
-    mettre_a_jour_les_monomes()
+  Side = if side is "gauche" then "Gauche" else "Droite"
+  membre = "#membreDe#{Side}_#{id}"
+  selected = "#{membre} > .#{side}.selected"
+  alert "#{Side} + #{membre} + #{selected} +#{$( selected ).length}" if debug
+  symbols = {}
+  values = new Fraction 0, 1
+  $( selected ).each ->
+    data_type = $( this ).attr("data-type")
+    value = string_to_frac $( this ).attr( "data-value")
+    switch data_type
+      when "symbol"
+        symbol = $( this ).attr("data-symbol")   
+        symbols[ symbol ] ?= new Fraction 0, 1
+        symbols[ symbol ] = ajouter_deux_fractions(symbols[ symbol ], value)
+      when "rationnel"
+        values =  ajouter_deux_fractions(values, value)        
+  for symbol, value of symbols
+    $( membre ).append(insert_monome side, "#{value.numerateur}/#{value.denominateur}", "#{symbol}")  
+  $( membre ).append(insert_monome side, "#{values.numerateur}/#{values.denominateur}")
+  $( selected ).remove()
+  mettre_a_jour_les_monomes()
+  
 
 #simplifier les fractions sélectionnées d'une équation
 simplifier_ce_monome = (monome) ->
-  value = valeur_comme_fraction monome.attr( "data-value")
-  value.irreductible()
-  monome.attr( "data-value", "#{value.numerateur}/#{value.denominateur}")
-  mettre_a_jour_ce_monome(monome)
+  try
+    value = string_to_frac monome.attr( "data-value")
+    value.irreductible()
+    monome.attr( "data-value", "#{value.numerateur}/#{value.denominateur}")
+    mettre_a_jour_ce_monome(monome)
+  catch error
+    alert error
+  finally
+    
   
 #simplifier les fractions sélectionnées d'une équation
 simplifier_les_monomes = (id) ->
-  $( "#equation_#{id} > ul > li.selected" ).each ->
-    simplifier_ce_monome( $(this) )
+  try
+    $( "#equation_#{id} > ul > li.selected" ).each ->
+      simplifier_ce_monome( $(this) )
+  catch error
+    print "simplifier_les_monomes: #{error}"
+  finally
 
+insert_monome = (side,fraction_string,symbol) ->
+  try
+    unique_id++
+    if not symbol?
+      foo = "<li id='monome_#{unique_id}' class='monome #{side}' data-value='#{fraction_string}' data-type='rationnel'></li>"
+    else
+      foo = "<li id='monome_#{unique_id}' class='monome #{side}' data-value='#{fraction_string}' data-type='symbol' data-symbol='#{symbol}'></li>"  
+  catch error
+      print "insert_monome: #{error}"
+  finally
+  
 #Modifier un terme lors de son passage d'un membre a l'autre de l'équation   
 changer_de_membre = (event, ui,id) ->
-  value = valeur_comme_fraction(ui.item.attr("data-value"))
-  value = multiplier_deux_fractions(value, new Fraction(-1, 1))
-  ui.item.attr("data-value", "#{value.numerateur}/#{value.denominateur}").toggleClass("gauche droite")
-  if $( "#membreDeDroite_#{id} > li" ).length is 0
-    $( "#membreDeDroite_#{id}" ).append("<li class='monome droite' data-value='0' data-type='rationnel'></li>")
-  if $( "#membreDeGauche_#{id}  > li" ).length is 0
-    $( "#membreDeGauche_#{id}" ).append("<li class='monome gauche' data-value='0' data-type='rationnel'></li>")
+  try
+    value = string_to_frac(ui.item.attr("data-value"))
+    value.oppose()
+    ui.item.attr("data-value", "#{value.numerateur}/#{value.denominateur}").toggleClass("gauche droite")
+    if $( "#membreDeDroite_#{id} > li" ).length is 0
+      $( "#membreDeDroite_#{id}" ).append(insert_monome "droite", "0")
+    if $( "#membreDeGauche_#{id}  > li" ).length is 0
+      $( "#membreDeGauche_#{id}" ).append(insert_monome "gauche", "0")
+  catch error
+      print "changer_de_membre: #{error}"
+  finally
 
 #Obtenir le code html d'un membre d'une equation    
 membre_as_html = (membre,side,id) ->
@@ -200,13 +257,14 @@ membre_as_html = (membre,side,id) ->
     Side = "Gauche" 
   else
     Side = "Droite"
-  html = "<ul class='membreDe#{Side}' id='membreDe#{Side}_#{id}'>"
+  html = "<ul id='membreDe#{Side}_#{id}' class='membreDe#{Side}'>"
   for monome in membre
     m = monome.split(")")
     if m[1]
-      html += "<li class='monome #{side}' data-value='#{m[0][1..]}' data-type='symbol' data-symbol='#{m[1]}'></li>"
+      html += insert_monome side, m[0][1..], m[1]
     else
-      html += "<li class='monome #{side}' data-value='#{m[0][1..]}' data-type='rationnel'></li>"
+      unique_id++
+      html += insert_monome side, m[0][1..]
   html += "</ul>"    
 
 n_termes_string = (n) ->
@@ -221,12 +279,12 @@ n_termes_string = (n) ->
       str += "+(#{coeff})x "
   str[1..]
 
-monome_comme_array = (s) ->
-  alert "monome_comme_array(#{s}) starts !" if debug
-  pattern_terme = /\([\+\-]*\d+[/\d+]*\)(\w+²{0,1})*/g
-  foo = s.match(pattern_terme)
-  if foo
-    if foo[0] is s
+#craignos !
+monome_string_comme_array = (s) ->
+  try
+    pattern_terme = /\([\+\-]*\d+[/\d+]*\)(\w+²{0,1})*/g
+    foo = s.match(pattern_terme)
+    if foo and foo[0] is s
       alert "#{s} match regex:#{pattern_terme}" if debug
       foo = s.split(")")
       if foo[1] 
@@ -236,36 +294,81 @@ monome_comme_array = (s) ->
     else
       alert "Poids mal formé"
       foo = []
+  catch error
+    alert "monome_string_comme_array : #{error}"
+  finally
+
+monome_comme_array = (monome) ->
+  if monome.attr( "data-type" ) is "rationnel"
+    s = "(#{monome.attr( "data-value" )})"
   else
-    alert "Poids mal formé"
-    foo = []
+    s = "(#{monome.attr( "data-value" )})#{monome.attr( "data-symbol" )}"
+  monome_string_comme_array(s)
 
-ajouter_un_terme_a_chaque_membre = (array,id,factor) ->
-  if array.length then value = valeur_comme_fraction array[0]
-  value = multiplier_deux_fractions(value, valeur_comme_fraction "#{factor}")
-  switch array.length
-    when 1
-      $( "#membreDeGauche_#{id}" ).append("<li class='monome gauche' data-type='rationnel' data-value='#{value.numerateur}/#{value.denominateur}'><span></span></li>")
-      $( "#membreDeDroite_#{id}" ).append("<li class='monome droite' data-type='rationnel' data-value='#{value.numerateur}/#{value.denominateur}'><span></span></li>")
-    when 2
-      symbol = array[1]
-      $( "#membreDeGauche_#{id}" ).append("<li class='monome gauche' data-value='#{value.numerateur}/#{value.denominateur}' data-type='symbol' data-symbol='#{symbol}'></li>")
-      $( "#membreDeDroite_#{id}" ).append("<li class='monome droite' data-value='#{value.numerateur}/#{value.denominateur}' data-type='symbol' data-symbol='#{symbol}'></li>")
-    else
-      alert "il manque quelque chose !"
-  mettre_a_jour_les_monomes()
+ajouter_un_terme_a_chaque_membre = (sign) ->
+  try
+    sign = if sign is "+" then 1 else -1
+    if $( ".focus" )? then id = $( ".focus" ).attr("id").split("_")[1] else alert "Choisir une équation !"   
+    array = monome_string_comme_array $( "#equation_string" ).val()
+    value = string_to_frac array[0]
+    value = multiplier_deux_fractions(value, string_to_frac "#{sign}")
+    switch array.length
+      when 1
+        s = insert_monome "gauche", "#{value.numerateur}/#{value.denominateur}"
+        $( "#membreDeGauche_#{id}" ).append(s)
+        s = insert_monome "droite", "#{value.numerateur}/#{value.denominateur}"
+        $( "#membreDeDroite_#{id}" ).append(s)
+      when 2      
+        symbol = array[1]
+        s = insert_monome "gauche", "#{value.numerateur}/#{value.denominateur}", "#{symbol}"
+        $( "#membreDeGauche_#{id}" ).append(s)
+        s = insert_monome "droite", "#{value.numerateur}/#{value.denominateur}", "#{symbol}"
+        $( "#membreDeDroite_#{id}" ).append(s)
+      else
+        alert "il manque quelque chose !"
+  catch error
+    alert "ajouter_un_terme_a_chaque_membre : #{error} ;id=#{id}, array=#{array}"
+  finally
+    mettre_a_jour_les_monomes()
+    $( "#equation_string" ).val("")
 
+ajouter_un_terme_a_chaque_membre = (monome,id) ->
+  try
+    array = monome_comme_array monome
+    value = string_to_frac array[0]
+    switch array.length
+      when 1
+        s = insert_monome "gauche", "#{value.numerateur}/#{value.denominateur}"
+        $( "#membreDeGauche_#{id}" ).append(s)
+        s = insert_monome "droite", "#{value.numerateur}/#{value.denominateur}"
+        $( "#membreDeDroite_#{id}" ).append(s)
+      when 2      
+        symbol = array[1]
+        s = insert_monome "gauche", "#{value.numerateur}/#{value.denominateur}", "#{symbol}"
+        $( "#membreDeGauche_#{id}" ).append(s)
+        s = insert_monome "droite", "#{value.numerateur}/#{value.denominateur}", "#{symbol}"
+        $( "#membreDeDroite_#{id}" ).append(s)
+      else
+        alert "il manque quelque chose !"
+  catch error
+    alert "ajouter_un_terme_a_chaque_membre : #{error} ;id=#{id}, array=#{array}"
+  finally
+    mettre_a_jour_les_monomes()
+    $( "#equation_string" ).val("")  
+  
 multiplier_chaque_membre_par = (facteur,id) ->
   if facteur.numerateur
     if facteur.numerateur/facteur.denominateur < 0 then $("#signe_#{id}").text changementSens[$("#signe_#{id}").text()]
     $( "#equation_#{id} > ul > li.monome").each ->
-      value = valeur_comme_fraction $( this ).attr( "data-value")
+      value = string_to_frac $( this ).attr( "data-value")
       value = multiplier_deux_fractions(value,facteur)
       $( this ).attr( "data-value","#{value.numerateur}/#{value.denominateur}")
   mettre_a_jour_les_monomes()
   
 # On Dom Ready !
-$ ->  
+$ ->
+  
+    
   $('*:not(:input)').disableSelection()
   $( "#equation_panel").draggable()
   
@@ -276,18 +379,14 @@ $ ->
   for char in liste_des_chiffres.concat ['&leftarrow;']
     $("#equation_panel").append("<span id='var_#{char}' class='panel_touch'>#{char}</span>")
   
-  
-  $('body').on "click", "#effacer_equation_string", () ->
-    $( "#equation_string" ).val( '' ) 
-    
   #Saisie 'intelligente' de l'equation   
   $('body').on "click", ".panel_touch", () ->
     char = $( this ).attr( "id" ).split("_")[1]    
     saisie = $( "#equation_string" ).val()
-    caractere_precedent = if saisie.length then saisie[saisie.length-1] else ''      
+    caractere_precedent = if saisie.length then saisie.slice(-1) else ''      
     
     if char is '←'
-      if saisie.length is 1
+      if saisie.length < 2
         saisie = ""
       else
         saisie = saisie[0..(saisie.length-2)]
@@ -342,49 +441,126 @@ $ ->
         else if char is '/'                 then alert "Ca y est déjà !"
       else
         saisie += "#{char}"
-        
     $( "#equation_string" ).val(saisie)
-  
-  
-  # effacer une equation
+
+# effacer la zone de saisie  
+  $('body').on "click", "#effacer_equation_string", () ->
+    $( "#equation_string" ).val( '' ) 
+      
+# effacer une equation
   $('body').on "click", ".deleteButton", () ->
-    id = $( this ).parent().attr("id").split("_")[1]
-    $( "#equation_#{id}.focus" ).hide 'slow', () -> 
-      $( "#equation_#{id}.focus" ).remove()
+    if $( ".focus" ).attr("id")
+      id = $( ".focus" ).attr("id").split("_")[1]
+      $( "#equation_#{id}.focus" ).hide 'easeInElastic', () -> 
+        $( "#equation_#{id}.focus" ).remove()
   
-   # additionner les termes selectionnés d'un membre par double click
+  # additionner les termes selectionnés d'un membre par double click
   $('body').on "dblclick", ".selected", (event) ->
     event.stopImmediatePropagation()
-    id = $( this ).parent().attr("id").split("_")[1]
-    if $( this ).hasClass( "gauche" ) and $("#equation_#{id} ul > .gauche.selected").length>1
-      sommation_par_membre("gauche",id)
+    id = if $( ".focus" ).attr("id") then $( ".focus" ).attr("id").split("_")[1] else alert "Selectionner une équation !"
+    if id
+      if $( this ).hasClass( "gauche" ) and $("#equation_#{id} ul > .gauche.selected").length>1
+        sommation_par_membre("gauche",id)
+      else
+        if $( this ).hasClass( "droite" ) and $("#equation_#{id} ul > .droite.selected").length>1
+          sommation_par_membre("droite",id)
+  
+  $( "body" ).on "click", ".ajouterChoixMonome", () ->
+    id = $( this ).attr("id").split("_")[1]
+    data_type = $( this ).attr( "data-type" )
+    data_value = $( this ).attr( "data-value" )
+    if data_type is "symbol"
+      symbol = $( this ).attr( "data-symbol" )
+      html = """
+        <li data-type='symbol' data-value='#{data_value}' data-symbol='#{symbol}'</li>'
+             """
     else
-      if $( this ).hasClass( "droite" ) and $("#equation_#{id} ul > .droite.selected").length>1
-        sommation_par_membre("droite",id)
-      
+      html = """
+        <li data-type='rationnel' data-value='#{data_value}'></li>'
+             """
+    monome = $($.parseHTML(html))
+    ajouter_un_terme_a_chaque_membre monome, id
+   
+   # multiplier par une fraction chaque membre de lequation 
+  $( "body" ).on "click", ".multiplierChoixMonome", () ->
+    $( "#choixMonome_#{id}" ).empty()
+    id = $( this ).attr("id").split("_")[1]
+    data_value = $( this ).attr( "data-value" )
+    facteur = string_to_frac data_value
+    multiplier_chaque_membre_par(facteur,id)
+    
+
+   # multiplier par une fraction chaque membre de lequation 
+  $( "body" ).on "click", ".supprimerChoixMonome", () ->
+    id = $( this ).attr("id").split("_")[1]
+    $( "#choixMonome_#{id}" ).empty()
+          
   # selectionner un terme
   $('body').on "click", "li", (event) ->
     event.stopImmediatePropagation()
-    $(this).toggleClass("selected")
+    frac = string_to_frac $(this).attr( "data-value" )
+    if frac.numerateur is 0 and $(this).siblings().length > 0
+      $( this ).remove()
+    else
+      id = $( this ).parent().attr("id").split("_")[1]
+      $( "#choixMonome_#{id}" ).empty()
+      inv_frac = frac.inverse()
+      frac.inverse()
+      opp_frac = frac.oppose()
+      frac.oppose()
+      
+      $(this).toggleClass("selected")
+      $( "#equation_string").val("(#{$(this).attr( "data-value" )})")
+      data_type = $(this).attr( "data-type" )
+      switch data_type
+        when "symbol"
+          symbol =  $(this).attr( "data-symbol" )
+          html = """
+            <button id='multiplierChoixMonome_#{id}' class='multiplierChoixMonome' data-type='rationnel' data-value='#{frac.numerateur}/#{frac.denominateur}'>*(#{frac_to_html frac})</button>
+            <button id='diviserChoixMonome_#{id}'    class='multiplierChoixMonome' data-type='rationnel' data-value='#{inv_frac.numerateur}/#{inv_frac.denominateur}'>*(#{frac_to_html inv_frac})</button>
+            <button id='ajouter_#{id}'               class='ajouterChoixMonome' data-type='symbol' data-value='#{frac.numerateur}/#{frac.denominateur}' data-symbol='#{symbol}'>#{frac_to_html frac}#{symbol}</button>
+            <button id='retrancher_#{id}'            class='ajouterChoixMonome' data-type='symbol' data-value='#{opp_frac.numerateur}/#{opp_frac.denominateur}' data-symbol='#{symbol}'>#{frac_to_html opp_frac}#{symbol}</button>
+            <button id='supprimerChoixMonome_#{id}'  class='supprimerChoixMonome' >x</button>
+                  """
+          $( "#choixMonome_#{id}" ).append(html)
+        when "rationnel"
+          html = """
+            <button id='multiplierChoixMonome_#{id}' class='multiplierChoixMonome' data-type='rationnel' data-value='#{frac.numerateur}/#{frac.denominateur}'>*(#{frac_to_html frac})</button>
+            <button id='diviserChoixMonome_#{id}' class='multiplierChoixMonome' data-type='rationnel' data-value='#{inv_frac.numerateur}/#{inv_frac.denominateur}'>*(#{frac_to_html inv_frac})</button>
+            <button id='ajouterChoixMonome_#{id}' class='ajouterChoixMonome' data-type='rationnel' data-value='#{frac.numerateur}/#{frac.denominateur}'>#{frac_to_html frac}</button>
+            <button id='retrancherChoixMonome_#{id}' class='ajouterChoixMonome' data-type='rationnel' data-value='#{opp_frac.numerateur}/#{opp_frac.denominateur}'>#{frac_to_html opp_frac}</button>
+            <button id='supprimerChoixMonome_#{id}'  class='supprimerChoixMonome' >x</button>
+                 """
+          $( "#choixMonome_#{id}" ).append(html)
+        else
+          alert "aie"
+      
+      
+      
+      
   
   #Focus sur une équation et/ou désélectionner les termes d'une équation en cliquant à coté
   $('body').on "click", ".equation", () ->
     $( ".focus" ).toggleClass("focus")
     $( this ).toggleClass("focus")
     focus_id = parseInt $( this ).attr("id").split("_")[1]
-    $( this ).find( ".monome" ).removeClass( "selected" )
+    $( ".selected" ).toggleClass( "selected" )
   
   #focus sur une équation par le signe
   $('body').on "click", ".signe", () ->
     $( ".focus" ).toggleClass("focus")
     id = $( this ).attr("id").split("_")[1]
     $("#equation_#{id}").toggleClass("focus")
+    $( ".selected" ).toggleClass( "selected" )
+
     
   # selectionner tous les termes d'une equation
   $( "body" ).on "click", ".selectAllButton", (event) ->
     event.stopImmediatePropagation()
-    id = $( ".focus" ).attr("id").split("_")[1]
-    $("#equation_#{id}.focus ul > .monome").addClass( "selected" )
+    if $( ".focus" ).attr("id")
+      id = $( ".focus" ).attr("id").split("_")[1]
+      $("#equation_#{id}.focus ul > .monome").addClass( "selected" )
+    else alert "Selectionner une équation !"
     
   # simplifier un terme
   $('body').on "dblclick", ".monome", () ->
@@ -393,58 +569,61 @@ $ ->
    
   #Simplifier les fractions selectionnées d'une équation
   $( "body" ).on "click", ".simplifier_les_monomes", () ->
-    id = $( ".focus" ).attr("id").split("_")[1]
-    simplifier_les_monomes(id)
+    if $( ".focus" ).attr("id")
+      id = $( ".focus" ).attr("id").split("_")[1]
+      simplifier_les_monomes(id)
+    else alert "Selectionner une équation !"
     
   #Obtenir la solution de l'equation s'il ne reste plus qu'un symbole à gauche
   $( "body" ).on "click", ".obtenirSolution", () ->
-    id = $( ".focus" ).attr("id").split("_")[1]
-    obtenir_la_solution(id)
-      
+    if $( ".focus" ).attr("id")
+      id = $( ".focus" ).attr("id").split("_")[1]
+      obtenir_la_solution(id)
+    else alert "Selectionner une équation !"
+    
   # Ajouter un terme a chaque membre de l'equation
   $( "body" ).on "click", ".ajouter", () ->
-    id = $( ".focus" ).attr("id").split("_")[1]
     if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
-    array = monome_comme_array $( "#equation_string" ).val()
-    ajouter_un_terme_a_chaque_membre(array,id,1)
-   
+    ajouter_un_terme_a_chaque_membre 1
   # Retrancher un terme a chaque membre de lequation
   $( "body" ).on "click", ".retrancher", () ->
-    id = $( ".focus" ).attr("id").split("_")[1]
     if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
-    array = monome_comme_array $( "#equation_string" ).val()
-    ajouter_un_terme_a_chaque_membre(array,id,-1)
+    ajouter_un_terme_a_chaque_membre -1
         
   # multiplier par une fraction chaque membre de lequation
   $( "body" ).on "click", ".multiplier", () ->
-    id = $( ".focus" ).attr("id").split("_")[1]
-    if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
-    array = monome_comme_array $( "#equation_string" ).val()
-    if array.length is 1
-      facteur = valeur_comme_fraction array[0]
-      multiplier_chaque_membre_par(facteur,id)
-    else
-      alert "Il faut un coefficient seul"  
+    id = if $( ".focus" ).attr("id") then $( ".focus" ).attr("id").split("_")[1] else alert "Selectionner une équation !"
+    if id
+      if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
+      array = monome_string_comme_array $( "#equation_string" ).val()
+      if array.length is 1
+        facteur = string_to_frac array[0]
+        multiplier_chaque_membre_par(facteur,id)
+        $( "#equation_string" ).val("")
+      else
+        alert "Il faut un coefficient seul"  
  
   # diviser par une fraction chaque membre de lequation
   $( "body" ).on "click", ".diviser", () ->
-    id = $( ".focus" ).attr("id").split("_")[1]
-    if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
-    array = monome_comme_array $( "#equation_string" ).val()
-    if array.length is 1
-      facteur = valeur_comme_fraction array[0]
-      facteur.inverse()
-      multiplier_chaque_membre_par(facteur,id)
-    else
-      alert "Il faut un coefficient seul"
+    id = if $( ".focus" ).attr("id") then $( ".focus" ).attr("id").split("_")[1] else alert "Selectionner une équation !"
+    if id
+      if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
+      array = monome_string_comme_array $( "#equation_string" ).val()
+      if array.length is 1
+        facteur = string_to_frac array[0]
+        facteur.inverse()
+        multiplier_chaque_membre_par(facteur,id)
+      else
+        alert "Il faut un coefficient seul"
        
   # effectuer la somme, par membre, des termes selectionnés
   $( "body" ).on "click", ".sommationMonome", () ->
-    id = parseInt $( ".focus" ).attr("id").split("_")[1]
-    if $( "#equation_#{id} ul > .droite.selected" ).length>0
-      sommation_par_membre("droite",id)
-    if $( "#equation_#{id} ul > .gauche.selected" ).length>0
-      sommation_par_membre("gauche",id)
+    id = if $( ".focus" ).attr("id") then $( ".focus" ).attr("id").split("_")[1] else alert "Selectionner une équation !"
+    if id
+      if $( "#equation_#{id} ul > .droite.selected" ).length>0
+        sommation_par_membre("droite",id)
+      if $( "#equation_#{id} ul > .gauche.selected" ).length>0
+        sommation_par_membre("gauche",id)
     
    
   $( "body" ).on "click", "#generer_equation", () ->
@@ -459,28 +638,28 @@ $ ->
   
   $( "body" ).on "click", ".copier", () ->
     id = parseInt $( ".focus" ).attr("id").split("_")[1]
-    copier_symbole = $( "#equation_#{id} > ul.membreDeGauche > li").attr("data-symbol")
-    copier_contenu = $( "#equation_#{id} > ul.membreDeDroite > li")
-    alert "symbole copié : #{copier_symbole}"
+    activer_copier_symbole = $( "#equation_#{id} > ul.membreDeGauche > li").attr("data-symbol")
+    activer_copier_contenu = $( "#equation_#{id} > ul.membreDeDroite > li")
+    alert "symbole copié : #{activer_copier_symbole}"
     
   check_substitute = (side,id) ->
     Side = if side is "gauche" then "Gauche" else "Droite"
     #alert "#membreDe#{Side}_#{id} > li"
     #alert $( "#membreDe#{Side}_#{id} > li").length
     $( "#membreDe#{Side}_#{id} > li").each ->
-      #alert copier_symbole + " vs " + $( this ).attr( "data-symbol")
-      if $( this ).attr( "data-symbol") is copier_symbole
+      #alert activer_copier_symbole + " vs " + $( this ).attr( "data-symbol")
+      if $( this ).attr( "data-symbol") is activer_copier_symbole
         html = ""
-        fraction1 = valeur_comme_fraction $( this ).attr( "data-value") 
-        copier_contenu.each ->
-          fraction2 = valeur_comme_fraction $( this ).attr("data-value")
+        fraction1 = string_to_frac $( this ).attr( "data-value") 
+        activer_copier_contenu.each ->
+          fraction2 = string_to_frac $( this ).attr("data-value")
           value = multiplier_deux_fractions fraction1, fraction2
           symbol = $( this ).attr("data-symbol")
           if symbol
             html += "<li class='monome #{side}' data-value='#{value.numerateur}/#{value.denominateur}' data-type='symbol' data-symbol='#{symbol}'></li>"
           else
             html += "<li class='monome #{side}' data-value='#{value.numerateur}/#{value.denominateur}' data-type='rationnel'></li>"  
-        $( this ).hide 1000, () -> 
+        $( this ).hide "easeInElastic", () -> 
           $( this ).remove()
           $( "#membreDe#{Side}_#{id}" ).append(html)
           mettre_a_jour_les_monomes()       
@@ -491,7 +670,8 @@ $ ->
     check_substitute("droite", id)
           
   $( "body" ).on "click", "#add_equation", () ->
-    id++
+    unique_id++
+    id = unique_id
     if s = $( "#equation_string" ).val()
       if s.slice(-1) in liste_des_chiffres
         $( "#equation_string" ).val(s + ')')
@@ -507,16 +687,15 @@ $ ->
         mdd = s[1].split("+")   
         html =  """
                 <div id='equation_#{id}' class='equation' >
-                    <button id='deleteButton_{id}' class='deleteButton' title='Supprimer cette équation'>X</button>                  
+                    <button id='deleteButton_#{id}' class='deleteButton' title='Supprimer cette équation'>X</button>
+                    <div id='choixMonome_#{id}' class='choixMonome'></div>           
                 """
         html += membre_as_html(mdg,"gauche",id)
         html += "<span id='signe_#{id}' class='signe'>#{signe}</span>"
         html += membre_as_html(mdd,"droite",id)
         html += "<p id='solution_#{id}'></p></div>"
-        $( "body" ).append(html)
+        $( "#equations_div" ).append(html)
         mettre_a_jour_les_monomes()
-        doSort()
       else
         alert "Vérifier que l'équation est correctement formatée"
-    doSort()
       
