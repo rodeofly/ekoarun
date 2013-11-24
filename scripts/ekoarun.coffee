@@ -305,7 +305,7 @@ monome_comme_array = (monome) ->
     s = "(#{monome.attr( "data-value" )})#{monome.attr( "data-symbol" )}"
   monome_string_comme_array(s)
 
-ajouter_un_terme_a_chaque_membre = (sign) ->
+add_panel_touch = (sign) ->
   try
     sign = if sign is "+" then 1 else -1
     if $( ".focus" )? then id = $( ".focus" ).attr("id").split("_")[1] else alert "Choisir une équation !"   
@@ -327,7 +327,7 @@ ajouter_un_terme_a_chaque_membre = (sign) ->
       else
         alert "il manque quelque chose !"
   catch error
-    alert "ajouter_un_terme_a_chaque_membre : #{error} ;id=#{id}, array=#{array}"
+    alert "add_panel_touch : #{error} ;id=#{id}, array=#{array}"
   finally
     mettre_a_jour_les_monomes()
     $( "#equation_string" ).val("")
@@ -584,11 +584,11 @@ $ ->
   # Ajouter un terme a chaque membre de l'equation
   $( "body" ).on "click", ".ajouter", () ->
     if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
-    ajouter_un_terme_a_chaque_membre 1
+    add_panel_touch 1
   # Retrancher un terme a chaque membre de lequation
   $( "body" ).on "click", ".retrancher", () ->
     if $( "#equation_string" ).val().slice(-1) in liste_des_chiffres then $( "#equation_string" ).val($( "#equation_string" ).val().concat ')')
-    ajouter_un_terme_a_chaque_membre -1
+    add_panel_touch -1
         
   # multiplier par une fraction chaque membre de lequation
   $( "body" ).on "click", ".multiplier", () ->
