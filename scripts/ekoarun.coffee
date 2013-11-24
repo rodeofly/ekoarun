@@ -499,16 +499,23 @@ $ ->
   $('body').on "click", "li", (event) ->
     event.stopImmediatePropagation()
     frac = string_to_frac $(this).attr( "data-value" )
-    if frac.numerateur is 0 and $(this).siblings().length > 0
-      $( this ).remove()
+    foo = new Fraction frac.numerateur, frac.denominateur
+    if frac.numerateur is 0
+      if $(this).siblings().length > 0
+        $( this ).remove()
+      else
+        $( this ).attr( "data-type", "rationnel" )
+        $( this ).attr( "data-value", "0" )
+        mettre_a_jour_ce_monome $( this )
     else
       id = $( this ).parent().attr("id").split("_")[1]
       $( "#choixMonome_#{id}" ).empty()
-      inv_frac = frac.inverse()
-      frac.inverse()
-      opp_frac = frac.oppose()
-      frac.oppose()
-      
+      inv_frac = foo.inverse()
+      foo.inverse()
+      opp_frac = foo.oppose()
+      foo.oppose()
+      irr_frac = new Fraction foo.numerateur, foo.denominateur
+      irr_frac.irreductible()
       $(this).toggleClass("selected")
       $( "#equation_string").val("(#{$(this).attr( "data-value" )})")
       data_type = $(this).attr( "data-type" )
@@ -516,6 +523,7 @@ $ ->
         when "symbol"
           symbol =  $(this).attr( "data-symbol" )
           html = """
+            <button class="simplifier_les_monomes" title="rendre les fractions des termes sélectionnés irréductibles">#{frac_to_html frac} = #{frac_to_html irr_frac}</button>
             <button id='multiplierChoixMonome_#{id}' class='multiplierChoixMonome' data-type='rationnel' data-value='#{frac.numerateur}/#{frac.denominateur}'>*(#{frac_to_html frac})</button>
             <button id='diviserChoixMonome_#{id}'    class='multiplierChoixMonome' data-type='rationnel' data-value='#{inv_frac.numerateur}/#{inv_frac.denominateur}'>*(#{frac_to_html inv_frac})</button>
             <button id='ajouter_#{id}'               class='ajouterChoixMonome' data-type='symbol' data-value='#{frac.numerateur}/#{frac.denominateur}' data-symbol='#{symbol}'>#{frac_to_html frac}#{symbol}</button>
@@ -525,6 +533,7 @@ $ ->
           $( "#choixMonome_#{id}" ).append(html)
         when "rationnel"
           html = """
+            <button class="simplifier_les_monomes" title="rendre les fractions des termes sélectionnés irréductibles">#{frac_to_html frac} = #{frac_to_html irr_frac}</button>
             <button id='multiplierChoixMonome_#{id}' class='multiplierChoixMonome' data-type='rationnel' data-value='#{frac.numerateur}/#{frac.denominateur}'>*(#{frac_to_html frac})</button>
             <button id='diviserChoixMonome_#{id}' class='multiplierChoixMonome' data-type='rationnel' data-value='#{inv_frac.numerateur}/#{inv_frac.denominateur}'>*(#{frac_to_html inv_frac})</button>
             <button id='ajouterChoixMonome_#{id}' class='ajouterChoixMonome' data-type='rationnel' data-value='#{frac.numerateur}/#{frac.denominateur}'>#{frac_to_html frac}</button>

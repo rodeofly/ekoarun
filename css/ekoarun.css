@@ -61,6 +61,7 @@ button {
 	
 }
 
+
 .deleteButton {
 	float:left;
 	font: 20px/100% Arial, Helvetica, sans-serif;
@@ -125,7 +126,9 @@ li.monome {
 ul > li.monome:first-child > span > span.plus {
 	display:none;
 }
-
+.multiplierChoixMonome > span.plus{
+	display:none;
+}
 li {
 	-moz-user-select: -moz-all;
     -webkit-user-select: all;
